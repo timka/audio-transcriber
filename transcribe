@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+while IFS= read -r filepath; do
+  [[ -z "$filepath" ]] && continue
+  [[ ! -f "$filepath" ]] && echo "⚠️ No such file: $filepath" >&2 && continue
+  uv run audio-transcriber "$filepath" "$MODEL_LANGUAGE"
+done
