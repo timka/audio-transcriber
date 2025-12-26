@@ -1,0 +1,42 @@
+#!/usr/bin/env zsh
+
+set -euo pipefail
+
+# for trimming whitespace
+setopt KSH_GLOB
+
+AUDIO_DIR="./data/audio"
+mkdir -p "$AUDIO_DIR"
+
+while IFS= read -r url; do
+  [[ -z "$url" ]] && continue
+
+  # trim whitespace
+  url="${${url##+([[:space:]])}%%+([[:space:]])}"
+
+  # generate stable unique file name
+  fname=$(printf "%s" "$url" | md5sum | cut -d' ' -f1)
+
+  echo "$url" > "./data/${fname}.url"
+
+  audio_path="$AUDIO_DIR/${fname}.m4a"
+
+  if [[ -f "$audio_path" ]]; then
+    echo "✅ already done: $audio_path" >&2
+    echo "$audio_path"
+    continue
+  fi
+
+  echo -n "📥 downloading $url → $audio_path … " >&2
+  uv run yt-dlp \
+    --extract-audio \
+    --audio-format m4a \
+    --audio-quality 0 \
+    --output "$audio_path" \
+    --no-overwrites \
+    --quiet \
+    "$url"
+
+  echo "  ✅ done " >&2
+  echo "$audio_path"
+done
